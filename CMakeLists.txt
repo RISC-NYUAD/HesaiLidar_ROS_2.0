@@ -16,7 +16,7 @@ configure_file(
 #=======================================
 # Custom Point Type (XYZI, XYZIRT)
 #=======================================
-set(POINT_TYPE XYZI)
+set(POINT_TYPE XYZIRT)
 
 #=======================================
 # Compile setup (ORIGINAL, CATKIN, COLCON)
