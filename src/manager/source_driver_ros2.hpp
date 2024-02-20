@@ -39,6 +39,7 @@
 #include <chrono>
 #include <string>
 #include <functional>
+#include <rclcpp/clock.hpp>
 #ifdef __CUDACC__
   #include "hesai_lidar_sdk_gpu.cuh"
 #else
@@ -214,9 +215,21 @@ inline sensor_msgs::msg::PointCloud2 SourceDriver::ToRosMsg(const LidarDecodedFr
   sensor_msgs::PointCloud2Iterator<float> iter_intensity_(ros_msg, "intensity");
   sensor_msgs::PointCloud2Iterator<uint16_t> iter_ring_(ros_msg, "ring");
   sensor_msgs::PointCloud2Iterator<double> iter_timestamp_(ros_msg, "timestamp");
-  
+
+  // Shift timestamp for each point to match the system one
+  double timestamp_shift = 0.0;
+  {
+    rclcpp::Clock clock(RCL_ROS_TIME);
+    rclcpp::Time current_time = clock.now();
+    int64_t current_time_ns = current_time.nanoseconds();
+    double current_time_s = static_cast<double>(current_time_ns) * 1e-9;
+    double frame_s = frame.points[0].timestamp;
+    timestamp_shift = current_time_s - frame_s;
+  }
+
   for (size_t i = 0; i < frame.points_num; i++)
   {
+    frame.points[i].timestamp += timestamp_shift;
     LidarPointXYZIRT point = frame.points[i];
     *iter_x_ = point.x;
     *iter_y_ = point.y;
