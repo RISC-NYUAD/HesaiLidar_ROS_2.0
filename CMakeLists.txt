@@ -7,7 +7,7 @@ project(hesai_ros_driver)
 #=======================================
 set(VERSION_MAJOR 2)
 set(VERSION_MINOR 0)
-set(VERSION_TINY  5)
+set(VERSION_TINY  8)
 configure_file(
   "${CMAKE_CURRENT_SOURCE_DIR}/Version.h.in"
   "${CMAKE_CURRENT_BINARY_DIR}/Version.h"
@@ -38,7 +38,7 @@ if (CMAKE_BUILD_TYPE STREQUAL "")
   add_definitions(-O3)
 endif()
 
-if($ENV{ROS_DISTRO} STREQUAL "humble")  # the ros2 humble requires c++17
+if($ENV{ROS_DISTRO} STREQUAL "jazzy")  # the ros2 humble requires c++17
 add_definitions(-std=c++17)
 else()
 add_definitions(-std=c++14)
@@ -71,6 +71,9 @@ if($ENV{ROS_VERSION} MATCHES "1")
     FILES
     "UdpPacket.msg"
     "UdpFrame.msg"
+    "LossPacket.msg"
+    "Ptp.msg"
+    "Firetime.msg"
   )
 
   generate_messages(
@@ -111,6 +114,9 @@ if($ENV{ROS_VERSION} MATCHES "2")
     rosidl_generate_interfaces(${PROJECT_NAME}
       "msg/msg_ros2/UdpPacket.msg"
       "msg/msg_ros2/UdpFrame.msg"
+      "msg/msg_ros2/Firetime.msg"
+      "msg/msg_ros2/Ptp.msg"
+      "msg/msg_ros2/LossPacket.msg"
       DEPENDENCIES builtin_interfaces std_msgs
     )
     ament_export_dependencies(rosidl_default_runtime)                 
@@ -142,9 +148,15 @@ add_subdirectory(src/driver/HesaiLidar_SDK_2.0)
 #                node/hesai_ros_driver_node.cpp
 #                src/manager/node_manager.cpp
 #                )
+find_package(Boost REQUIRED COMPONENTS thread)
+include_directories(${Boost_INCLUDE_DIRS})
+link_directories(${Boost_LIBRARY_DIRS})
 
+# if install different cuda version, set the cuda path, like cuda-11.4
+# set(CUDA_TOOLKIT_ROOT_DIR /usr/local/cuda-11.4/)
+# find_package(CUDA REQUIRED)
+find_package(CUDA )
 
-find_package(CUDA)
 if(CUDA_FOUND)
   
   message(=============================================================)
@@ -152,7 +164,7 @@ if(CUDA_FOUND)
   message(=============================================================)
 
   link_directories($ENV{CUDA_PATH}/lib/x64)
-  set(CUDA_NVCC_FLAGS "-arch=sm_75;-O2;-std=c++17")#根据具体GPU性能更改算力参数
+  set(CUDA_NVCC_FLAGS "-arch=sm_75;-O2")#根据具体GPU性能更改算力参数
   set(CMAKE_CUDA_FLAGS "${CMAKE_CUDA_FLAGS} -rdc=true")
   list(APPEND CUDA_NVCC_FLAGS -Xcompiler -fPIC)
 
